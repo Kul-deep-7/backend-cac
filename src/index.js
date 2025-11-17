@@ -1,13 +1,12 @@
 import dotenv from 'dotenv'                  
 dotenv.config({ path: '.env' })               // Loads all variables from .env into process.env
 
-import mongoose from "mongoose";              // Mongoose helps connect to MongoDB and manage schemas
-import express from "express";                // Express helps create the server and handle routes
-import { DB_NAME } from './constants.js';     // DB_NAME is kept separate for cleaner and flexible config
+
+import database from "./db/index.js";
 
 
 
-
+database()
 
 
 
@@ -25,7 +24,7 @@ const app = express();                        // Initialize the Express applicat
 // We use this so we can run async code (like DB connection) at the top level.
 ;(async()=>{
 
-    try {                                     // Try block protects the startup sequence
+    try {                                     // Try block protects the startup sequence. This is where you attempt something that might fail.
 
         // "await" ensures the server waits until MongoDB is connected.
         // Without await = server may start even if DB fails → broken app.
