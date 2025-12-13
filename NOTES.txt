@@ -1,0 +1,301 @@
+// Method 1: Modular database connection
+// --------------------------------------
+// In this approach, we create a separate DB function inside /db/index.js.
+// This function handles:
+//   - MongoDB connection using mongoose.connect()
+//   - Error handling
+//   - Exiting the process if DB connection fails
+//
+// The main server file simply calls database()
+// and starts the Express server ONLY after the DB connects successfully.
+//
+// Benefits:
+// - Cleaner folder structure
+// - Reusable and readable DB code
+// - Server never starts without a working DB
+
+
+// Method 2: IIFE-based DB + Server setup (single-file approach)
+// --------------------------------------------------------------
+// This method uses an async IIFE to run DB connection and start the server
+// inside one self-contained function.
+//
+// The flow:
+//   1. The async IIFE runs automatically when the file loads.
+//   2. It waits for mongoose.connect() to succeed.
+//   3. If DB connects, the server starts (app.listen()).
+//   4. If DB fails, the catch block logs the error and stops execution.
+//
+// Benefits:
+// - Simpler for very small projects
+// - Everything in one place
+//
+// Drawbacks:
+// - Not modular
+// - Harder to scale
+
+REQUEST, RESPONSE, PARAMS, BODY, COOKIES, MIDDLEWARE, CORS, CLASSES, HOF, APIERROR
+====================================================================
+
+1. REQUEST & RESPONSE (req, res)
+--------------------------------
+req = incoming data from client.
+res = outgoing data you send back.
+
+req contains:
+- req.params
+- req.query
+- req.body
+- req.cookies
+- req.headers
+
+Example:
+app.get('/user/:id', (req, res) => {
+  console.log(req.params.id);
+  res.send('hello');
+});
+
+Analogy: req = package received, res = package you send back.
+
+--------------------------------------------------------------------
+
+2. req.params
+-------------
+URL parameters.
+
+Example:
+GET /user/123
+req.params.id --> "123"
+
+Analogy: Room number in an address.
+
+--------------------------------------------------------------------
+
+3. req.query
+------------
+Query string in URL (filters/search).
+
+Example:
+GET /search?name=kuldeep&age=21
+req.query.name --> "kuldeep"
+
+Analogy: Special instructions attached to an order.
+
+--------------------------------------------------------------------
+
+4. req.body
+-----------
+POST/PUT/PATCH body data. Requires middleware.
+
+Example:
+app.post('/login', (req, res) => {
+  console.log(req.body);
+});
+
+Analogy: Inside content of the parcel.
+
+--------------------------------------------------------------------
+
+5. req.cookies
+--------------
+Requires cookie-parser middleware.
+
+Example:
+req.cookies.token
+
+Analogy: Entry tickets automatically sent with every request.
+
+--------------------------------------------------------------------
+
+6. bodyParser
+-------------
+Old library, now integrated into Express.
+
+Old:
+app.use(bodyParser.json());
+
+New:
+app.use(express.json());
+app.use(express.urlencoded({ extended:true }));
+
+Analogy: Machine that opens packages.
+
+--------------------------------------------------------------------
+
+7. MIDDLEWARE
+-------------
+Normal middleware:
+(req, res, next) => {}
+
+Error middleware:
+(err, req, res, next) => {}
+
+Normal:
+app.use((req,res,next)=>{ console.log("hi"); next(); });
+
+Error:
+app.use((err,req,res,next)=>{ res.status(500).json({error:err.message}); });
+
+Analogy: Checkpoints. Error middleware = last security guard.
+
+--------------------------------------------------------------------
+
+8. cookieParser
+---------------
+To read/write cookies.
+
+import cookieParser from "cookie-parser";
+app.use(cookieParser());
+
+Set cookie:
+res.cookie("token", "abc123", { httpOnly:true });
+
+Read cookie:
+req.cookies.token
+
+Analogy: Interpreter who reads stickers attached to parcels.
+
+--------------------------------------------------------------------
+
+9. CORS
+-------
+Controls which frontend can access backend.
+
+import cors from "cors";
+
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true
+}));
+
+Analogy: Bouncer checking IDs at the gate.
+
+--------------------------------------------------------------------
+
+10. express.json({limit})
+-------------------------
+Parses JSON body. "limit" prevents huge requests.
+
+app.use(express.json({ limit:"16kb" }));
+
+Analogy: Machine that rejects oversized parcels.
+
+--------------------------------------------------------------------
+
+11. express.static
+------------------
+Serves static public files.
+
+app.use(express.static("public"));
+
+Analogy: Shop shelf—files accessible freely.
+
+--------------------------------------------------------------------
+
+12. express.urlencoded()
+------------------------
+Handles HTML form data.
+
+app.use(express.urlencoded({ extended:true }));
+
+extended:true allows nested objects.
+
+Analogy: Opening tightly packed letters.
+
+--------------------------------------------------------------------
+
+13. Middleware configuration order
+-----------------------------------
+Order matters.
+
+app.use(cors());
+app.use(express.json());
+app.use(cookieParser());
+app.use("/api", apiRouter);
+app.use(errorMiddleware);
+
+Analogy: Security check → body check → ID check → main service → last guard.
+
+--------------------------------------------------------------------
+
+14. Higher-Order Functions (HOF)
+--------------------------------
+Functions that take/return functions.
+
+Example:
+function withLogging(fn){
+  return function(...args){
+    console.log("before");
+    return fn(...args);
+  }
+}
+
+Analogy: Wrapper box that adds features without modifying original.
+
+--------------------------------------------------------------------
+
+15. Constructors
+----------------
+Blueprint initializer.
+
+function User(name){
+  this.name = name;
+}
+const u = new User("kuldeep");
+
+"new" does:
+1. Creates empty object
+2. Sets prototype
+3. Binds this
+4. Returns object
+
+Analogy: Mold that shapes objects.
+
+--------------------------------------------------------------------
+
+16. Classes in JS
+-----------------
+Syntactic sugar over constructor functions + prototypes.
+
+class User {
+  constructor(name){
+    this.name = name;
+  }
+  sayHi(){
+    console.log(this.name);
+  }
+}
+
+Analogy: Modern blueprint; underlying machinery still old-school.
+
+--------------------------------------------------------------------
+
+17. ApiError Class
+------------------
+Reusable error format.
+
+class ApiError extends Error {
+  constructor(statusCode, message, errors = [], stack = ""){
+    super(message);
+    this.statusCode = statusCode;
+    this.data = null;
+    this.success = false;
+    this.errors = errors;
+    if(stack){
+      this.stack = stack;
+    } else {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+Usage:
+throw new ApiError(404, "User not found");
+
+Analogy: Throwing labeled error grenades with status, message, stack.
+
+====================================================================
+END OF NOTES
+====================================================================
+
+

@@ -1,12 +1,26 @@
 import dotenv from 'dotenv'                  
-dotenv.config({ path: '.env' })               // Loads all variables from .env into process.env
-
-
+dotenv.config({ path: '.env' })             // Loads all variables from .env into process.env
+import app from "./app.js";
 import database from "./db/index.js";
 
 
-
 database()
+.then(()=>{
+    app.on(error, (err)=>{
+        console.error("Error in the server",err);
+        throw err
+    })
+
+    app.listen(process.env.PORT || 3000,()=>{
+        console.log(`Server is running on port ${process.env.PORT}`);
+    })
+})
+.catch(
+    (error)=>{
+        console.error("Error connecting to the database", error);
+        process.exit(1)
+    }
+)
 
 
 
