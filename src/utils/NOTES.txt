@@ -1,0 +1,221 @@
+EXPLANATION OF ApiError CLASS (NOTES)
+====================================
+
+Code Reference:
+---------------
+class ApiError extends Error {
+    constructor(
+        statusCode,
+        message = "Something went wrong",
+        errors = [],
+        stack = ""
+    ){
+        super(message)
+        this.statusCode = statusCode
+        this.data = null
+        this.message = message
+        this.success = false
+        this.errors = errors
+
+        if (stack) {
+            this.stack = stack
+        } else {
+            Error.captureStackTrace(this, this.constructor)
+        }
+    }
+}
+
+export { ApiError }
+
+------------------------------------------------------------
+
+1. class ApiError extends Error
+-------------------------------
+- ApiError is a custom error class.
+- Error is JavaScript’s built-in error class.
+- `extends` means inheritance.
+
+Meaning:
+ApiError is a specialized version of Error.
+
+Why this matters:
+- ApiError behaves like a real Error.
+- It supports stack traces.
+- It works with try/catch and Express error middleware.
+
+If `extends Error` is removed:
+- Error handling breaks
+- Stack trace is unreliable
+- instanceof Error fails
+
+------------------------------------------------------------
+
+2. Constructor
+--------------
+The constructor runs automatically when:
+throw new ApiError(...)
+
+Purpose:
+- Initialize error details in one place.
+
+Constructor parameters:
+- statusCode → HTTP status (400, 401, 404, 500)
+- message → error message
+- errors → array of detailed errors
+- stack → custom stack trace (optional)
+
+Default values ensure safety when arguments are missing.
+
+------------------------------------------------------------
+
+3. super(message)
+-----------------
+Calls the parent (Error) constructor.
+
+Why it is REQUIRED:
+- Initializes Error.message
+- Initializes stack trace
+- Makes `this` usable in child class
+
+Without super():
+- `this` does not exist
+- Stack trace breaks
+- Error inheritance fails
+
+Book definition:
+super() invokes the parent class constructor.
+
+------------------------------------------------------------
+
+4. this keyword
+---------------
+`this` refers to the current ApiError object being created.
+
+Each line attaches a property to the error object:
+
+this.statusCode = statusCode
+this.data = null
+this.message = message
+this.success = false
+this.errors = errors
+
+Meaning:
+All error-related data is stored inside one object.
+
+Why success = false:
+So frontend always knows the request failed.
+
+------------------------------------------------------------
+
+5. Why this.message = message exists
+------------------------------------
+Even though super(message) already sets message,
+this.message is explicitly assigned.
+
+Reasons:
+- Some frameworks override Error.message
+- Ensures consistent API response
+- Defensive programming practice
+
+------------------------------------------------------------
+
+6. Stack Trace Handling
+-----------------------
+If stack is passed:
+this.stack = stack
+
+Example:
+throw new ApiError(500, "DB error", [], err.stack)
+
+Benefit:
+- Preserves original error location
+- Improves debugging
+
+------------------------------------------------------------
+
+7. Error.captureStackTrace
+--------------------------
+Used when no custom stack is provided.
+
+Error.captureStackTrace(this, this.constructor)
+
+What it does:
+- Creates clean stack trace
+- Removes constructor noise
+- Improves readability
+
+Without this:
+- Stack trace becomes messy
+- Debugging becomes harder
+
+------------------------------------------------------------
+
+8. Why this ApiError design is GOOD
+-----------------------------------
+Problems it solves:
+- Centralized error handling
+- Consistent API responses
+- HTTP-aware errors
+- Clean debugging
+
+This is industry-level backend design.
+
+------------------------------------------------------------
+
+9. Usage Example
+----------------
+Throwing error in controller:
+
+if (!user) {
+  throw new ApiError(404, "User not found")
+}
+
+------------------------------------------------------------
+
+10. Error Middleware Example
+----------------------------
+app.use((err, req, res, next) => {
+  res.status(err.statusCode || 500).json({
+    success: err.success,
+    message: err.message,
+    errors: err.errors
+  })
+})
+
+------------------------------------------------------------
+
+11. Object Created (Mental Model)
+--------------------------------
+new ApiError(404, "User not found") creates:
+
+{
+  statusCode: 404,
+  message: "User not found",
+  success: false,
+  errors: [],
+  stack: "...",
+  __proto__: Error
+}
+
+This object IS an Error.
+
+------------------------------------------------------------
+
+12. Exam-Ready Definitions
+--------------------------
+extends      → Used to inherit another class
+constructor  → Initializes object at creation
+super()      → Calls parent class constructor
+this         → Refers to current object
+ApiError     → Custom error extending built-in Error
+
+------------------------------------------------------------
+
+FINAL NOTE
+----------
+ApiError is not beginner code.
+Understanding this means understanding backend error handling properly.
+
+====================================
+END OF NOTES
+====================================
