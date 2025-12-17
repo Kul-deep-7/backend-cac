@@ -77,9 +77,14 @@ user.save()
 //custom method to check if hashed password matches
 userSchema.methods.isPasswordCorrect = async function (password) {
    return await bcrypt.compare(password, this.password); //password → plain text password entered by the user (login). this.password → hashed password stored in the database
-
-
 }
+
+/*
+Why compare is needed:
+Passwords are stored as hashed values, so:
+You cannot do password === this.password
+You must use bcrypt.compare()
+*/
 
 userSchema.methods.generateAccessToken = function() {
     return jwt.sign(
