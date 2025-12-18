@@ -124,9 +124,14 @@ Payload (data) who the user is||user data. never store passwords or secrets here
 Secret (signature) signature key to prevent tampering. Backend verifies token using same secret(The Signature is the result of a mathematical "mixing" of the Header, Payload, and your Secret Key)
 You don’t explicitly write the Header in your code because the library generates it for you by default.(What is in it: It typically looks like { "alg": "HS256", "typ": "JWT" })o
 Expiry. it is short-lived to limit risk if stolen (This isn't its own "part" of the JWT string, but rather a set of instructions for the library on how to build the Payload and Header)
-
-
 in Refresh token, we store minimal data (_id only) to reduce risk if stolen
+
+When you call jwt.sign() in your code, the library follows this exact recipe:
+Encode Header: Turns the header JSON into a Base64URL string.
+Encode Payload: Turns your user data object into a Base64URL string.
+Combine them: Joins them with a dot (Header.Payload).
+Add the Secret: It takes that combined string and "mixes" it with your Secret Key using a cryptographic algorithm (like HS256).
+Final Result: The output of that process is the Signature. 
 */
 
 const User = mongoose.model("User", userSchema)
@@ -136,20 +141,24 @@ export default User;
 /* 
 
 Runtime flow (important)
+
 Login
-
 User logs in
-
 Backend verifies password
-
 Backend generates:
-
 const accessToken = user.generateAccessToken()
 const refreshToken = user.generateRefreshToken()
-
-
 Access token → sent to client
-
 Refresh token → stored securely (httpOnly cookie / DB)
 
+
+The Mathematical Formula
+Technically, JWT looks like this:
+Signature = HMACSHA256(Base64Url(Header) + "." + Base64Url(Payload), Secret). 
+Why this matters for your Backend
+When the user sends the token back to you later, your backend does the same math again:
+It takes the Header and Payload the user sent.
+It grabs the Secret Key from your .env.
+It re-calculates the signature.
+The Test: If your newly calculated signature matches the one the user sent, the token is Valid. If they don't match, someone tampered with the data
 */
