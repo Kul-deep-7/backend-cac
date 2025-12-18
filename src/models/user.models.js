@@ -122,7 +122,9 @@ jwt.sign(payload, secret, options)
 JWT has three parts:
 Payload (data) who the user is||user data. never store passwords or secrets here
 Secret (signature) signature key to prevent tampering. Backend verifies token using same secret
+You don’t explicitly write the Header in your code because the library generates it for you by default.(What is in it: It typically looks like { "alg": "HS256", "typ": "JWT" })
 Expiry. it is short-lived to limit risk if stolen
+
 
 in Refresh token, we store minimal data (_id only) to reduce risk if stolen
 */
