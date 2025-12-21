@@ -1,5 +1,5 @@
 import express from 'express';
-import cookieParser from 'cookieparser';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 
 const app = express();
@@ -28,4 +28,12 @@ Form sends: username=abc&password=123
 After parsing: { username: "abc", password: "123" } */
 
 app.use(express.static('public')); // Serve static files from the 'public' directory
+
+
+//routes 
+
+import userRoute from "./routes/user.routes.js"
+
+app.use('/api/vi/users', userRoute) //http://localhost:8000/api/v1/users
+
 export default app;

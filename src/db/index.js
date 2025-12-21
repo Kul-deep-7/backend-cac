@@ -2,6 +2,8 @@ import dotenv from 'dotenv'
 dotenv.config({ path: '.env' })               // Loads all variables from .env into process.env
 import mongoose from "mongoose";              // Mongoose helps connect to MongoDB and manage schemas
 import { DB_NAME } from '../constants.js';     // DB_NAME is kept separate for cleaner and flexible config
+import express from 'express';
+
 const app = express()
 
 async function database() {

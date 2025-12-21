@@ -2,11 +2,12 @@ import dotenv from 'dotenv'
 dotenv.config({ path: '.env' })             // Loads all variables from .env into process.env
 import app from "./app.js";
 import database from "./db/index.js";
+import express from 'express';
 
 
 database()
 .then(()=>{
-    app.on(error, (err)=>{
+    app.on("error", (err)=>{
         console.error("Error in the server",err);
         throw err
     })
