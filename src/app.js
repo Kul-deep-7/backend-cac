@@ -34,6 +34,6 @@ app.use(express.static('public')); // Serve static files from the 'public' direc
 
 import userRoute from "./routes/user.routes.js"
 
-app.use('/api/vi/users', userRoute) //http://localhost:8000/api/v1/users
+app.use('/api/v1/users', userRoute) //http://localhost:8000/api/v1/users
 
 export default app;
