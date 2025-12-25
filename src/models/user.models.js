@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import bcrypt from "bcrpyt"
+import mongoose, {Schema} from "mongoose";
+import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 
 const userSchema = new mongoose.Schema(
@@ -136,7 +136,8 @@ Final Result: The output of that process is the Signature.
 
 const User = mongoose.model("User", userSchema)
 
-export default User;    
+export {User};
+
 
 /* 
 

@@ -1,5 +1,6 @@
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {ApiError} from "../utils/ApiError.js"
+import { User} from "../models/user.models.js"
 
 const registerUser = asyncHandler(async(req,res)=>{
     // get user details from frontend
@@ -13,7 +14,7 @@ const registerUser = asyncHandler(async(req,res)=>{
     // return response to frontend
 
     const{fullName,email,password,username}=req.body
-    console.log("email:",email)
+    //console.log("email:",email)
 
 
     /*if(!fullName || fullName.trim()===""){
@@ -28,14 +29,25 @@ const registerUser = asyncHandler(async(req,res)=>{
     })
     */
 
-    if (
+     if (
         [fullName, email, username, password].some( //The .some() method returns true if at least one element in an array satisfies a condition.
-            (field) => field?.trim() === ""//cb function.. field means 1 value at a time.
-         )//field?.trim():?. (optional chaining) prevents error if field is null or undefined. "Is this field empty after removing spaces?"
+            (field) => {
+                //console.log("Checking field:", field) -> for debugging and checking using postman
+                return field?.trim() === ""}//cb function.. field means 1 value at a time.
+         )//field?.trim():  ?. (optional chaining) prevents error if field is null or undefined. "Is this field empty after removing spaces?"
         ) {//Optional chaining (?.) allows safe access to a property or method of an object that may be null or undefined, without throwing an error.
             throw new ApiError(400, "All fields are required")
-        }   
+            console.log(field)
+        }
 
+    const existedUser= await User.findOne({
+        $or: [{email},{username}]
+    })
 
+    if(existedUser){
+        throw new ApiError(409,"User with email or username already exists")
+    }
 
-export default registerUser
+})
+
+export {registerUser}
