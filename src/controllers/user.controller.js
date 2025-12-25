@@ -16,7 +16,7 @@ const registerUser = asyncHandler(async(req,res)=>{
     console.log("email:",email)
 
 
-    if(!fullName || fullName.trim()===""){
+    /*if(!fullName || fullName.trim()===""){
         throw new ApiError(400,"Name is required")
     }else if(!email || email.trim()===""){
         throw new ApiError(400,"Email is required")
@@ -26,5 +26,16 @@ const registerUser = asyncHandler(async(req,res)=>{
         throw new ApiError(400,"Username is required")
     }
     })
+    */
+
+    if (
+        [fullName, email, username, password].some( //The .some() method returns true if at least one element in an array satisfies a condition.
+            (field) => field?.trim() === ""//cb function.. field means 1 value at a time.
+         )//field?.trim():?. (optional chaining) prevents error if field is null or undefined. "Is this field empty after removing spaces?"
+        ) {//Optional chaining (?.) allows safe access to a property or method of an object that may be null or undefined, without throwing an error.
+            throw new ApiError(400, "All fields are required")
+        }   
+
+
 
 export default registerUser
