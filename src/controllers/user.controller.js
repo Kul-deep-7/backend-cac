@@ -1,6 +1,7 @@
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {ApiError} from "../utils/ApiError.js"
 import { User} from "../models/user.models.js"
+import {uploadOnCloudinary} from "../utils/cloudinary.js"
 
 const registerUser = asyncHandler(async(req,res)=>{
     // get user details from frontend
@@ -40,13 +41,30 @@ const registerUser = asyncHandler(async(req,res)=>{
             console.log(field)
         }
 
-    const existedUser= await User.findOne({
-        $or: [{email},{username}]
-    })
+const existedUser = await User.findOne({
+  $or: [{ email }, { username }]
+})
 
-    if(existedUser){
-        throw new ApiError(409,"User with email or username already exists")
-    }
+if (existedUser) {
+  console.log("User already exists:", existedUser)
+  throw new ApiError(409, "User with email or username already exists")
+}
+
+const avatarLocalPath = req.files?.avatar[0]?.path;
+//this means if req.files exist then check for avatar and then check for path.
+//get the local file path of the uploaded avatar image if it exists, otherwise set avatarLocalPath to undefined.
+const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
+
+if(!avatarLocalPath){
+    throw new ApiError(400,"Avatar is required")
+}
+
+const avatar = await uploadOnCloudinary(avatarLocalPath); //this uploads the avatar image to Cloudinary and returns the URL of the uploaded image.
+const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+if(!avatar){
+ throw new ApiError(500,"Could not upload avatar. Please try again later.") 
+}
 
 })
 
