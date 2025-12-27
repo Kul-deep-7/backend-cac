@@ -2,6 +2,7 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 import {ApiError} from "../utils/ApiError.js"
 import { User} from "../models/user.models.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import {ApiResponse} from "../utils/ApiResponse.js"
 
 const registerUser = asyncHandler(async(req,res)=>{
     // get user details from frontend
@@ -59,12 +60,46 @@ if(!avatarLocalPath){
     throw new ApiError(400,"Avatar is required")
 }
 
-const avatar = await uploadOnCloudinary(avatarLocalPath); //this uploads the avatar image to Cloudinary and returns the URL of the uploaded image.
-const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+const avatarCloud = await uploadOnCloudinary(avatarLocalPath); //this uploads the avatar image to Cloudinary and returns the URL of the uploaded image.
+const coverImageCloud = await uploadOnCloudinary(coverImageLocalPath);
 
 if(!avatar){
  throw new ApiError(500,"Could not upload avatar. Please try again later.") 
 }
+
+const user = await User.create({ //creates a mongodb User document..
+    fullName, //Comes from frontend. Stored as-is.
+    avatar: avatarCloud.url,
+    coverImage:coverImageCloud?.url || "",
+    email,
+    username: username.toLowerCase(),
+    password
+})//creating user in db
+/*
+user = {
+  _id: "abc123",
+  username: "kuldeep",
+  password: "hashedpassword",
+  refreshToken: "...", ...
+} //not safe to send to frontend cuz it contains sensitive info like password and refresh token.
+
+*/
+
+const createdUser = await User.findById(user._id).select( //.select() is used when fetching data from MongoDB to decide:which fields you WANT(no -) & which fields you DON’T want(prefix with -)
+    "-password -refreshToken"
+) //we fetch again cuz we want the same user without sensitive info like password and refresh token(“Give me this user, but hide password and refreshToken.).
+/*Think of it like this 🧠
+create() → write operation (save this data)
+findById() → read operation (show this data safely)*/
+
+if(!createdUser){
+    throw new ApiError(500, "Something went wrong while registering the user")
+} //if user creation failed crash safely
+
+return res.status(201).json(
+    new ApiResponse(200, createdUser, "User registered successfully")
+) //send response to frontend. frontend now knows user was created successfully.
+
 
 })
 
