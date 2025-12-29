@@ -1,5 +1,5 @@
-import dotenv from 'dotenv'                  
-dotenv.config({ path: '.env' })             // Loads all variables from .env into process.env
+import "./env.js";
+           // Loads all variables from .env into process.env
 import app from "./app.js";
 import database from "./db/index.js";
 import express from 'express';

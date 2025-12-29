@@ -2,6 +2,11 @@ import {v2 as cloudinary} from 'cloudinary';
 import fs from 'fs';
 //fs lets you: Read files, Delete files, Rename files. You’ll use it later to delete temporary files from your server.
 
+// console.log("🔍 Cloudinary ENV check:");
+// console.log("CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME);
+// console.log("API_KEY:", process.env.CLOUDINARY_API_KEY);
+// console.log("API_SECRET:", process.env.CLOUDINARY_API_SECRET);
+//this is for safety purpose to check if env variables are loaded properly.
 
 cloudinary.config({ 
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
@@ -18,8 +23,8 @@ const uploadOnCloudinary = async (localFilePath) =>{ //localFilePath: path of th
             resource_type: "auto"//auto: automatically detect the file type (image, video, etc.)
         })
         //file uploaded on cloudinary
-        console.log("file uploaded on cloudinary", response.url);; //for testing prupose to see if upload was successful
-        //fs.unlinkSync(localFilePath); //remove the file from local storage after successful upload
+        //console.log("file uploaded on cloudinary", response.url);; //for testing prupose to see if upload was successful.
+        fs.unlinkSync(localFilePath); //remove the file from local storage after successful upload
         return response //response contains details about the uploaded file (like URL, public_id, etc.) return it to the caller
     } catch (error) { 
         fs.unlinkSync(localFilePath); //remove the locally saved temporary file as the upload failed

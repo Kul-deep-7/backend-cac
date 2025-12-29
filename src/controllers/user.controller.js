@@ -56,6 +56,14 @@ const avatarLocalPath = req.files?.avatar[0]?.path;
 //this means if req.files exist then check for avatar and then check for path.
 //get the local file path of the uploaded avatar image if it exists, otherwise set avatarLocalPath to undefined.
 const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
+/*
+//another way similar to above. It checks if req.files.coverImage exists and is an array with at least one element before accessing the path property of the first element.
+let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path
+    }
+*/
+
 
 if(!avatarLocalPath){
     throw new ApiError(400,"Avatar is required")
@@ -64,7 +72,10 @@ if(!avatarLocalPath){
 const avatarCloud = await uploadOnCloudinary(avatarLocalPath); //this uploads the avatar image to Cloudinary and returns the URL of the uploaded image.
 const coverImageCloud = await uploadOnCloudinary(coverImageLocalPath);
 
-if(!avatar){
+//console.log("Avatar local path:", avatarLocalPath)
+//console.log("Avatar cloud response:", avatarCloud)
+
+if(!avatarCloud){
  throw new ApiError(500,"Could not upload avatar. Please try again later.") 
 }
 
@@ -89,7 +100,7 @@ user = {
 const createdUser = await User.findById(user._id).select( //.select() is used when fetching data from MongoDB to decide:which fields you WANT(no -) & which fields you DON’T want(prefix with -)
     "-password -refreshToken"
 ) //we fetch again cuz we want the same user without sensitive info like password and refresh token(“Give me this user, but hide password and refreshToken.).
-/*Think of it like this 🧠
+/*Think of it like this 
 create() → write operation (save this data)
 findById() → read operation (show this data safely)*/
 
