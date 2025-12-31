@@ -111,8 +111,38 @@ if(!createdUser){
 return res.status(201).json(
     new ApiResponse(200, createdUser, "User registered successfully")
 ) //send response to frontend. frontend now knows user was created successfully.
+})
+
+
+const loginUser = asyncHandler(async(req,res)=>{
+/* 
+// Request body -> contains login credentials
+// Accept login via username or email
+// Find the user in the database
+// Verify the password
+// Generate access and refresh tokens
+// Send tokens back as cookies
+*/
+
+const{username, password, email}=req.body
+
+if(!username || !email){
+    throw new ApiError(400, "username or email required")
+}
+
+const user = await User.findOne({
+    $or: [{username},{email}]
+}) //user is a document (an instance) fetched from MongoDB
+
+if(!user){
+    throw new ApiError(400, "username & email does not exists")
+}
+
 
 
 })
 
-export {registerUser}
+export {
+    registerUser,
+    loginUser
+}
