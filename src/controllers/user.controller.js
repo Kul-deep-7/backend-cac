@@ -132,11 +132,29 @@ if(!username || !email){
 
 const user = await User.findOne({
     $or: [{username},{email}]
-}) //user is a document (an instance) fetched from MongoDB
+}) //user is a document (an instance) fetched from MongoDB meaning we cre
+//`user` is the real data that came from the database
+// It represents ONE actual user stored in MongoDB
+
 
 if(!user){
-    throw new ApiError(400, "username & email does not exists")
+    throw new ApiError(404, "username & email does not exists")
 }
+
+const isPasswordValid = await user.isPasswordCorrect(password) //isPasswordCorrect() is an instance method 
+//if we use User instead of user it will give error cuz User is mongoose object (means it have access  to methods like findOne, deleteOne etc) 
+//but the methods we made like isPasswordCorrect, generateAccessToken are instance methods which can be accessed only by the document (instance) fetched from the db.
+
+// User contains many documents (many users).
+// user is one specific document (one exact user).
+// When we call user.isPasswordCorrect(password),
+// it compares the entered password with that user’s stored password.
+// If it matches → login successful.
+
+if(!isPasswordValid){
+    throw new ApiError(401, "invalid user credentials")
+}
+
 
 
 
