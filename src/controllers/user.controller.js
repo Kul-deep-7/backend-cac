@@ -195,6 +195,28 @@ const {rToken, aToken}= await generateAccessAndRefreshTokens(user._id)
 //We find the user using email or username, store that user in a variable, then use the user’s unique _id to 
 //create access and refresh tokens so the backend can recognize that exact user on future requests and allow access.
 
+//We fetch one specific user document using the user’s _id (got from the user instance), and from that document we send all non-sensitive fields to 
+// the frontend, while intentionally excluding sensitive fields like password and refreshToken.
+const loggedInUser = await User.findById(user._id)
+.select("-password -refreshToken")
+
+const options = {
+    httpOnly: true, //prevents client-sdie JS from accessing the cookie (security measure against XSS attacks))
+    secure: true //cookie sent only over HTTPS (ensures cookie is encrypted during transmission)
+}
+
+return res
+.status(200)
+.cookie("accessToken", aToken, options) //creates a cookie named "accessToken" & uses secure, httpOnly settings
+.cookie("refreshToken", rToken,options) //so now browser has both tokens stored as cookies, wwhen the browser stores the cookies, the user gets a 
+                                        //smooth experience because they don’t have to log in again on every request.
+.json(
+    new ApiResponse(200,{
+        user: loggedInUser, aToken, rToken //sending tokens in response body is optional as we are sending them as httpOnly cookies
+    },"user logged in successfullly"
+)
+)
+
 
 })
 
