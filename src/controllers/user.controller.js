@@ -4,6 +4,27 @@ import { User} from "../models/user.models.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 
+//helper function which needs userId& is async cuz DB word + token creation takes time
+const generateAccessAndRefreshTokens = async(userId)=> {
+    try {
+        const user = await User.findById(userId) //fetch user from db using userId. User is mongoose model & findById is mongoose method.
+        const aToken =user.generateAccessToken() //generates access token using instance method(as we discussed in loginUser function)
+        const rToken = user.generateRefreshToken()
+
+        //store refresh token inside user's document.. helps with logout,security, etc
+        user.refreshToken = rToken //meaning in the db we are storing the refresh token
+        await user.save({validateBeforeSave : false}) //save the updated user document with the new refresh token
+        //mongoose re-checks all validations before saving, even if only one field is changed, so we skip validation when it’s not needed.
+        //This speeds up the save operation and avoids unnecessary validation errors.
+        //e.g. if we only update refreshToken, we don’t need to re-validate email, password, etc.
+        //If password rules change later form(6 char to 8 char), old users may fail validation cuz .save() will run & check validation again during login even though they didn’t change their password, so we skip validation when saving refresh tokens.
+        return {aToken, rToken} //return both tokens to the caller
+        
+    } catch (error) {
+        throw new ApiError(500, "Could not generate tokens")
+    }
+}
+
 const registerUser = asyncHandler(async(req,res)=>{
     //algorithm: 
     // get user details from frontend
@@ -146,16 +167,33 @@ const isPasswordValid = await user.isPasswordCorrect(password) //isPasswordCorre
 //but the methods we made like isPasswordCorrect, generateAccessToken are instance methods which can be accessed only by the document (instance) fetched from the db.
 
 // User contains many documents (many users).
-// user is one specific document (one exact user).
+// user is one specific document (one exact user stored in user variable).
 // When we call user.isPasswordCorrect(password),
 // it compares the entered password with that user’s stored password.
 // If it matches → login successful.
+
+/*If we call User.isPasswordCorrect() it gives an error because
+User is the MongoDB/Mongoose model we created using a schema.
+That model mainly exists to talk to the database
+(find, create, update, delete documents).
+
+Our custom methods like isPasswordCorrect() are not database methods.
+They work on one specific user’s data, not on the whole collection.
+user is a variable that holds one single document fetched from the DB,
+so only user has access to our own instance methods. 
+
+
+Model works with collections
+Document works with data + logic
+*/
 
 if(!isPasswordValid){
     throw new ApiError(401, "invalid user credentials")
 }
 
-
+const {rToken, aToken}= await generateAccessAndRefreshTokens(user._id) 
+//We find the user using email or username, store that user in a variable, then use the user’s unique _id to 
+//create access and refresh tokens so the backend can recognize that exact user on future requests and allow access.
 
 
 })
