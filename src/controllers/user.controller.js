@@ -224,14 +224,15 @@ const logoutUser = asyncHandler(async(req,res)=>{
     //reset cookies
     //reset refresh token in db
     await User.findByIdAndUpdate(
-        req.user._id,
+        req.user._id, //comes from verifyJWT middlerware "req.user = user". It’s the database ID of the currently logged-in user. 
+        // Ensures you only update the user who is logged in.
         {
-            $set:{
+            $set:{ //$set is a MongoDB operator that updates the field you specify. This is crucial for logout → ensures no new access token can be generated.
                 refreshToken : undefined
             }
         },
         {
-            new : true
+            new : true //In Mongoose, findByIdAndUpdate by default returns the old document. new: true makes it return the updated document.
         }
     )
 
