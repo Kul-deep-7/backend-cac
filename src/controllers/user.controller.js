@@ -220,7 +220,13 @@ return res
 
 })
 
+const logoutUser = asyncHandler(async(req,res)=>{
+    //reset cookies
+    //reset refresh token in db
+})
+
 export {
     registerUser,
-    loginUser
+    loginUser,
+    logoutUser 
 }
