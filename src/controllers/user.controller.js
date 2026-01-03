@@ -223,6 +223,29 @@ return res
 const logoutUser = asyncHandler(async(req,res)=>{
     //reset cookies
     //reset refresh token in db
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{
+                refreshToken : undefined
+            }
+        },
+        {
+            new : true
+        }
+    )
+
+    const options = {
+    httpOnly: true, 
+    secure: true 
+}
+
+    return res
+    .status(200)
+    .clearCookie("accessToken", options) //we stored accessToken in key value pairs in login controller here we only need key
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User Logged out successfully"))
+
 })
 
 export {
