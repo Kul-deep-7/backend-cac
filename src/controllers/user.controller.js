@@ -3,22 +3,23 @@ import {ApiError} from "../utils/ApiError.js"
 import { User} from "../models/user.models.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
+import jwt from "jsonwebtoken"
 
 //helper function which needs userId& is async cuz DB word + token creation takes time
 const generateAccessAndRefreshTokens = async(userId)=> {
     try {
         const user = await User.findById(userId) //fetch user from db using userId. User is mongoose model & findById is mongoose method.
-        const aToken =user.generateAccessToken() //generates access token using instance method(as we discussed in loginUser function)
-        const rToken = user.generateRefreshToken()
+        const accessToken =user.generateAccessToken() //generates access token using instance method(as we discussed in loginUser function)
+        const refreshToken = user.generateRefreshToken()
 
         //store refresh token inside user's document.. helps with logout,security, etc
-        user.refreshToken = rToken //meaning in the db we are storing the refresh token
+        user.refreshToken = refreshToken //meaning in the db we are storing the refresh token
         await user.save({validateBeforeSave : false}) //save the updated user document with the new refresh token
         //mongoose re-checks all validations before saving, even if only one field is changed, so we skip validation when it’s not needed.
         //This speeds up the save operation and avoids unnecessary validation errors.
         //e.g. if we only update refreshToken, we don’t need to re-validate email, password, etc.
         //If password rules change later form(6 char to 8 char), old users may fail validation cuz .save() will run & check validation again during login even though they didn’t change their password, so we skip validation when saving refresh tokens.
-        return {aToken, rToken} //return both tokens to the caller
+        return {accessToken, refreshToken} //return both tokens to the caller
         
     } catch (error) {
         throw new ApiError(500, "Could not generate tokens")
@@ -193,7 +194,7 @@ if(!isPasswordValid){
     throw new ApiError(401, "invalid user credentials")
 }
 
-const {rToken, aToken}= await generateAccessAndRefreshTokens(user._id) 
+const {refreshToken, accessToken}= await generateAccessAndRefreshTokens(user._id) 
 //We find the user using email or username, store that user in a variable, then use the user’s unique _id to 
 //create access and refresh tokens so the backend can recognize that exact user on future requests and allow access.
 
@@ -209,12 +210,12 @@ const options = {
 
 return res
 .status(200)
-.cookie("accessToken", aToken, options) //creates a cookie named "accessToken" & uses secure, httpOnly settings
-.cookie("refreshToken", rToken,options) //so now browser has both tokens stored as cookies, wwhen the browser stores the cookies, the user gets a 
+.cookie("accessToken", accessToken, options) //creates a cookie named "accessToken" & uses secure, httpOnly settings
+.cookie("refreshToken", refreshToken,options) //so now browser has both tokens stored as cookies, wwhen the browser stores the cookies, the user gets a 
                                         //smooth experience because they don’t have to log in again on every request.
 .json(
     new ApiResponse(200,{
-        user: loggedInUser, aToken, rToken //sending tokens in response body is optional as we are sending them as httpOnly cookies
+        user: loggedInUser, accessToken, refreshToken //sending tokens in response body is optional as we are sending them as httpOnly cookies
     },"user logged in successfullly"
 )
 )
@@ -248,6 +249,80 @@ const logoutUser = asyncHandler(async(req,res)=>{
     .clearCookie("accessToken", options) //we stored accessToken in key value pairs in login controller here we only need key
     .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User Logged out successfully"))
+
+})
+
+const refreshAccessToken = asyncHandler(async(req,res)=>{
+// get refresh token from cookies or request body
+// if refresh token does not exist → unauthorized
+// verify refresh token using refresh secret
+// extract userId from decoded token
+// find user in database using userId
+// if user does not exist → unauthorized
+// compare incoming refresh token with stored refresh token
+// if mismatch → token expired or reused → unauthorized
+// generate new access token AND new refresh token
+// update refresh token in database (rotation)
+// send new tokens as httpOnly secure cookies
+
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken //Take refresh token from cookies if available, otherwise take it from request body
+
+    if(!incomingRefreshToken){
+        throw new ApiError(401, "unauthorized request")
+    }
+
+    try {
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET) //jwt.verify() compares the token’s signature.
+                            //jwt.verify(token, SECRET)
+    /*It takes the incoming refresh token, which has header, payload, signature. 
+    It takes the secret from .env
+    It re-creates a signature using header+paylaod+secret
+    It compares the re-created signature with the signature in the incomingRefreshToken..
+    If signature matches: Token was signed by your server,Token was not modified,Token is not expired
+    it returns the payload (decodedToken) which contains data like _id if verification is successful.
+    */ 
+    
+    /* 
+    So decodedToken now has the payload/data from the refresh token, now we need to find the user using id, 
+    as decodedToken is already a verified refresh token, it has the _id because we added _id in the payload when we created the refresh token.
+    it will give use the user's document from the db.
+    
+    decodedToken does not contain the refresh token string, it contains the payload data like _id, which we added when creating the token, and MongoDB simply finds the user using that _id.
+    */
+        const user = await User.findById(decodedToken?._id) //_id comes from refreshToken paylaod remember we created method generateRefreshToken in user model and added _id in payload
+    
+        if(!user){
+            throw new ApiError(401, "invalid refresh token")
+        }
+    
+        if(incomingRefreshToken !== user?.refreshToken){
+            throw new ApiError(401, "refresh token mismatch. possible token reuse")
+        } //“Is the refresh token sent by the user the same one that the server last issued to this user?”
+        //This check ensures that only the most recently issued refresh token can be used, preventing reuse of old or stolen refresh tokens.
+        //I get a refresh token key, server stores the same key in DB, and whenever I re-login, a new key is generated and the old one is rejected.
+    
+        //if both are same we can generate new access and refresh tokens
+        const {accessToken, newrefreshToken} = await generateAccessAndRefreshTokens(user._id)
+    
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+    
+        return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", newrefreshToken, options)
+        .json(
+            new ApiResponse(200, 
+                {accessToken, newrefreshToken},
+                "Access token refreshed successfully"
+        )
+    )
+    } catch (error) {
+        throw new ApiError(401, "invalid refresh token" )
+    }
+
 
 })
 
