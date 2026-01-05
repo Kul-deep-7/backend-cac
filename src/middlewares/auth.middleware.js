@@ -1,7 +1,7 @@
-import { ApiError } from "../utils/ApiError";
-import { asyncHandler } from "../utils/asyncHandler";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken"
-import {User} from "../models/user.models"
+import {User} from "../models/user.models.js"
 
 export const verifyJWT = asyncHandler(async(req, res, next)=>{
     try {
@@ -29,7 +29,7 @@ export const verifyJWT = asyncHandler(async(req, res, next)=>{
         } //if not token exists client is not logegd in
     
         //Token verification-It checks whether the token is real and unmodified, and if yes, extracts the data stored inside it.
-        const decodedToken = jwt.verify(token, ACCESS_TOKEN_SECRET)//when we signed the access token key in user.models using (jwt.sign()... we had the secret in it.. wwe should add the same secret key here to verify)
+        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)//when we signed the access token key in user.models using (jwt.sign()... we had the secret in it.. wwe should add the same secret key here to verify)
     /* 
     jwt.verify() validates the authenticity and expiry of a JWT using the secret key and returns the decoded payload if the token is valid.
     jwt.sign() = create identity proof
