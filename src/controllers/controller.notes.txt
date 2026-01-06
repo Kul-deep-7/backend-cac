@@ -1,0 +1,59 @@
+“User registers with credentials, data is validated, password is hashed and stored.
+On login, user is verified and access and refresh tokens are generated.
+Access token is short-lived and used to access protected routes.
+Refresh token is stored in the database and used to generate new access tokens.
+On refresh, the incoming refresh token is compared with the one in the database to prevent reuse.
+On logout, refresh token is removed from DB and cookies are cleared, fully invalidating the session.”
+
+
+TOKEN ROTATION-
+
+In generateAccessAndRefreshTokens, we generate tokens by calling the methods we created inside the User model. 
+Those methods internally use jwt.sign() to create the access token and refresh token. When we call 
+generateAccessAndRefreshTokens(user._id), we pass the user’s ID, so the function fetches the same existing user 
+from the database. That user object then generates new tokens, and the newly generated refresh token is stored 
+back in the database, replacing the old refresh token that was used. This way, the old refresh token becomes 
+invalid and the user now has a new refresh token saved in the DB.
+
+
+To be crystal clear:
+
+You use the old refresh token once to identify the user
+You generate a new refresh token using jwt.sign() via model methods
+You overwrite the old refresh token in the database
+The old refresh token immediately becomes invalid
+
+1. User logs in initially:
+   ┌─────────────────────────────────────────────┐
+   │ generateAccessAndRefreshTokens(user._id)    │
+   │ ↓                                           │
+   │ User.findById(user._id)                     │
+   │ ↓                                           │
+   │ user.generateAccessToken()  → jwt.sign()    │
+   │ user.generateRefreshToken() → jwt.sign()    │
+   │ ↓                                           │
+   │ user.refreshToken = newRefreshToken         │
+   │ user.save()                                 │
+   └─────────────────────────────────────────────┘
+   Returns: {accessToken, refreshToken}
+
+2. Access token expires (15 min later):
+   ┌─────────────────────────────────────────────┐
+   │ Client sends refresh request with old token │
+   │ ↓                                           │
+   │ generateAccessAndRefreshTokens(user._id)    │
+   │ ↓                                           │
+   │ User.findById(user._id)                     │
+   │ ↓                                           │
+   │ Check: Does DB refreshToken == sent token?  │
+   │ If YES → Continue                           │
+   │ If NO  → Reject (token reuse/theft)         │
+   │ ↓                                           │
+   │ Generate NEW tokens                         │
+   │ user.refreshToken = NEW refresh token       │
+   │ user.save() ← REPLACES old with new         │
+   └─────────────────────────────────────────────┘
+   Returns: {NEW accessToken, NEW refreshToken}
+
+
+
