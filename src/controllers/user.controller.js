@@ -19,6 +19,10 @@ const generateAccessAndRefreshTokens = async(userId)=> {
         //This speeds up the save operation and avoids unnecessary validation errors.
         //e.g. if we only update refreshToken, we don’t need to re-validate email, password, etc.
         //If password rules change later form(6 char to 8 char), old users may fail validation cuz .save() will run & check validation again during login even though they didn’t change their password, so we skip validation when saving refresh tokens.
+        
+       //console.log("NEW ACCESS TOKEN ", accessToken) //for testing purpose
+        //console.log("NEW REFRESH TOKEN ", refreshToken)
+
         return {accessToken, refreshToken} //return both tokens to the caller
         
     } catch (error) {
@@ -302,8 +306,11 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
         //I get a refresh token key, server stores the same key in DB, and whenever I re-login, a new key is generated and the old one is rejected.
     
         //if both are same we can generate new access and refresh tokens
-        const {accessToken, newrefreshToken} = await generateAccessAndRefreshTokens(user._id)
+        const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id)
     
+        //console.log("ROTATED ACCESS TOKEN =>", accessToken)
+        //console.log("ROTATED REFRESH TOKEN =>", refreshToken)
+
         const options = {
             httpOnly: true,
             secure: true
@@ -312,10 +319,10 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
         return res
         .status(200)
         .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", newrefreshToken, options)
+        .cookie("newrefreshToken", refreshToken, options)
         .json(
             new ApiResponse(200, 
-                {accessToken, newrefreshToken},
+                {accessToken, refreshToken},
                 "Access token refreshed successfully"
         )
     )

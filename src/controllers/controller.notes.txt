@@ -57,3 +57,42 @@ The old refresh token immediately becomes invalid
 
 
 
+Why refresh token works only once in Postman
+
+In my backend, I use refresh token rotation.
+This means every time the refresh token endpoint is called:
+A new access token is generated
+A new refresh token is generated
+The old refresh token is replaced in the database
+
+What happens step by step
+
+User logs in
+→ Backend generates Access Token + Refresh Token
+→ Refresh token is stored in DB and also sent as httpOnly cookie
+
+Postman calls /refresh-token first time
+Backend verifies refresh token
+Matches it with DB
+Generates new access token + new refresh token
+Old refresh token becomes invalid
+DB now stores the new refresh token
+Postman calls /refresh-token second time
+Postman still sends the old refresh token
+Backend compares: Incoming refresh token 
+                  Stored refresh token in DB (new one)
+Tokens do not match
+Backend throws “Invalid refresh token”
+
+Why this happens in Postman:
+Postman does not automatically update cookies correctly after rotation
+So it keeps sending the old refresh token
+That token is already invalidated by rotation
+Hence, refresh works only once
+
+How this works in real frontend apps:
+Browser automatically updates cookies
+Frontend calls refresh endpoint silently
+User never notices token refresh
+Refresh token rotation works smoothly
+
