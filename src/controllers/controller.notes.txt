@@ -19,6 +19,9 @@ from the database. That user object then generates new tokens, and the newly gen
 back in the database, replacing the old refresh token that was used. This way, the old refresh token becomes 
 invalid and the user now has a new refresh token saved in the DB.
 
+Refresh token rotation means that every time a refresh token is used, the server invalidates the old refresh token 
+and issues a new one. This prevents stolen refresh tokens from being reused, because only the most recently issued 
+refresh token remains valid
 
 To be crystal clear:
 
@@ -103,3 +106,17 @@ Refresh token rotation works smoothly
 
 Access tokens are short-lived and used for authorization. Refresh tokens are long-lived, stored securely in the database, 
 and used only to issue new access tokens. On logout, the refresh token is removed from the database, fully invalidating the session
+
+
+Logout requires a database update because JWT access tokens are stateless and cannot be revoked. By deleting the 
+refresh token from the database, we ensure that no new access tokens can be generated, effectively terminating the user’s session.
+
+
+JWT is a token format used to securely transmit claims between client and server. It is stateless and does not store session data on 
+the server. The server verifies the token signature to trust the claims, unlike traditional server-side sessions.
+JWT is Base64 encoded, not encrypted
+Anyone can decode header & payload
+Security comes from the signature
+JWT represents claims, not a session
+
+JWT header and payload are Base64 encoded, not encrypted, so anyone can decode them. Security comes from the signature, which prevents tampering without the secret key
