@@ -63,7 +63,7 @@ const registerUser = asyncHandler(async(req,res)=>{
             (field) => {
                 //console.log("Checking field:", field) -> for debugging and checking using postman
                 return field?.trim() === ""}//cb function.. field means 1 value at a time.
-         )//field?.trim():  ?. (optional chaining) prevents error if field is null or undefined. "Is this field empty after removing spaces?"
+         )//field?.trim():  ?. (optional chaining) prevents error if field is null or undefined. "Is this field empty after removing spaces"
         ) {//Optional chaining (?.) allows safe access to a property or method of an object that may be null or undefined, without throwing an error.
             throw new ApiError(400, "All fields are required")
             console.log(field)

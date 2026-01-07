@@ -1,3 +1,7 @@
+Authentication: Who are you?
+Authorization: What are you allowed to access?
+
+
 “User registers with credentials, data is validated, password is hashed and stored.
 On login, user is verified and access and refresh tokens are generated.
 Access token is short-lived and used to access protected routes.
@@ -96,3 +100,6 @@ Frontend calls refresh endpoint silently
 User never notices token refresh
 Refresh token rotation works smoothly
 
+
+Access tokens are short-lived and used for authorization. Refresh tokens are long-lived, stored securely in the database, 
+and used only to issue new access tokens. On logout, the refresh token is removed from the database, fully invalidating the session
