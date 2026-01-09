@@ -35,6 +35,7 @@ export const verifyJWT = asyncHandler(async(req, res, next)=>{
     jwt.sign() = create identity proof
     jwt.verify() = check identity proof
     */
+    //decodedToken now has the payload data we added when we created the token in user model (like _id, username, email)
     
         const user = await User
             .findById(decodedToken?._id) // Finds the user document using the _id extracted from the decoded JWT.

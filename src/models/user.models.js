@@ -55,10 +55,11 @@ const userSchema = new mongoose.Schema(
 //To hash the password before storing it in MongoDB.
 //used a regular function instead of arrow function to access "this" (this refers to the current user document)as arrow functions do not bind their own "this".
 userSchema.pre("save", async function(next) {
-    if(this.isModified("password")){
+    if(!this.isModified("password")) return next() //if password field is not modified, skip hashing and proceed to next middleware or save operation.
+//if password is modified (new user or password change), move to the next line to hash it
     this.password = await bcrypt.hash(this.password, 10); //The plain password becomes a hashed string.
-    }
-    next();
+    
+    
 })
 
 /*
