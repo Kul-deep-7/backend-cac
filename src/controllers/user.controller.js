@@ -432,7 +432,31 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
 })
 
 const updateCoverImage = asyncHandler(async(req,res)=>{
+    const localCoverImage = req.file?.path
 
+    if (!localCoverImage) {
+        throw new ApiError("local image file not found")
+    }
+
+    const coverImage = await uploadOnCloudinary(localCoverImage)
+
+    if (!coverImage.url) {
+        throw new ApiError("cover Image not uploaded on cloudinary")
+    }
+
+    const user = await User.findByIdAndUpdate(req.user?._id,
+        {
+        $set :{
+            coverImage : coverImage.url
+        }
+        },{new : true}
+    )
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, user, "Cover Image uploaded successfully")
+    )
 })
 
 export {
