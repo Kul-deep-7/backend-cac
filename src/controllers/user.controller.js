@@ -402,6 +402,39 @@ const updateAccountDetails = asyncHandler(async(req,res)=>{
 
 })
 
+const updateUserAvatar = asyncHandler(async(req,res)=>{
+    const localAvatar = req.file?.path;
+
+    if(!localAvatar){
+        throw new ApiError("Local Avatar file not found")
+    }
+
+    const avatar = await uploadOnCloudinary(localAvatar)
+
+    if(!avatar.url){
+        throw new ApiError("Error while uploading avatar on cloudinary")
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set : {
+                avatar: avatar.url
+            }
+        },{new: true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, user, "Avatar updated successfully")
+    )
+})
+
+const updateCoverImage = asyncHandler(async(req,res)=>{
+
+})
+
 export {
     registerUser,
     loginUser,
@@ -409,5 +442,7 @@ export {
     refreshAccessToken,
     changeCurrentPassword,
     getCurrentUser,
-    updateAccountDetails
+    updateAccountDetails,
+    updateUserAvatar,
+    updateCoverImage
 }
