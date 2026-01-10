@@ -139,7 +139,7 @@ return res.status(201).json(
 ) //send response to frontend. frontend now knows user was created successfully.
 })
 
-
+//req.user?.id will provide the current logged in user's id from verifyJWT middleware
 const loginUser = asyncHandler(async(req,res)=>{
 /* 
 // Request body -> contains login credentials
@@ -371,10 +371,43 @@ const getCurrentUser=asyncHandler(async(req,res)=>{
     )
 })
 
+const updateAccountDetails = asyncHandler(async(req,res)=>{
+    //get fullName, email from req.body
+    //validate email fullname not empty
+    //set new values using req.user
+    //remove sensitive field
+    //
+
+
+    const{fullName, email}=req.body
+
+    if (!fullName || !email) {
+        throw new ApiError(400, "fullname or email required");
+    }
+
+    const user = User.findByIdAndUpdate(req.user?._id, //req.user?.id will provide the current logged in user's id from verifyJWT middleware
+        {
+            $set :{
+                fullName,
+                email : email
+            }
+        },{new : true} //returns updated document
+    ).select("-password")
+
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200, user, "Account details updated successfully")
+    )
+
+})
+
 export {
     registerUser,
     loginUser,
     logoutUser,
     refreshAccessToken,
-    changeCurrentPassword
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails
 }

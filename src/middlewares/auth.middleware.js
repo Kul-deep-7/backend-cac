@@ -36,7 +36,7 @@ export const verifyJWT = asyncHandler(async(req, res, next)=>{
     jwt.verify() = check identity proof
     */
     //decodedToken now has the payload data we added when we created the token in user model (like _id, username, email)
-    
+
         const user = await User
             .findById(decodedToken?._id) // Finds the user document using the _id extracted from the decoded JWT.
             // This _id was added to the token payload when the token was created using jwt.sign() in the user model.
@@ -52,3 +52,10 @@ export const verifyJWT = asyncHandler(async(req, res, next)=>{
         throw new ApiError(401, "invalid Access Token")
     }
 })
+
+/* 
+The verifyJWT middleware runs before the controller and verifies the access token. 
+After verification, it decodes the token and attaches the logged-in user’s data to req.user. 
+Because of this, before the controller starts executing, the backend already knows which user is logged in. 
+Using req.user._id, the controller can safely update that specific user’s data in the database without relying on the client to send a user ID.
+*/
