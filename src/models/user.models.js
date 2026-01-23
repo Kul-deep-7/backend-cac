@@ -58,9 +58,52 @@ userSchema.pre("save", async function(next) {
     if(!this.isModified("password")) return next() //if password field is not modified, skip hashing and proceed to next middleware or save operation.
 //if password is modified (new user or password change), move to the next line to hash it
     this.password = await bcrypt.hash(this.password, 10); //The plain password becomes a hashed string.
-    
-    
 })
+
+/* 
+userSchema.pre("save", function(next) {
+    // Synchronous code
+    this.password = "hashed";
+    next(); // ✅ MUST call next() to proceed
+})
+```
+
+**How it works:**
+- `next` is a **callback function** passed to your middleware
+- Your code runs
+- You manually call `next()` to tell Mongoose: *"I'm done, continue to the next middleware"*
+- If you don't call `next()`, Mongoose waits forever ⏳
+```
+Start → Your Code → You call next() → Continue to save → Done
+
+
+userSchema.pre("save", async function() {
+    // Async code
+    this.password = await bcrypt.hash(this.password, 10);
+    // No next() needed! Just return naturally
+})
+```
+
+**How it works:**
+- No `next` parameter
+- Mongoose sees an **async function** and automatically waits for it to complete
+- When the function finishes (or `return`), Mongoose continues automatically
+- Mongoose handles the "call next" for you behind the scenes
+```
+Start → Your Async Code → Await resolves → Auto-continue → Done
+
+
+// Old callback way (pre-ES6)
+.pre('save', function(next) { next(); })
+
+// Modern async way (ES6+) ← Use this!
+.pre('save', async function()  no next()  is needed
+
+*/
+
+
+
+
 
 /*
 // 1. User tries to save document
