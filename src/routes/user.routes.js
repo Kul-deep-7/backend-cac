@@ -5,6 +5,7 @@ import { verifyJWT } from "../middlewares/auth.middleware.js"
 
 const router = Router()
 
+
 router.route("/register").post(
     upload.fields([
         {
@@ -17,6 +18,45 @@ router.route("/register").post(
         }
     ]),
     registerUser)//http://localhost:8000/api/vi/users/register
+
+    /* 
+When THIS works:
+req.files.picture[0].path
+
+That line works only if the middleware is something like:
+upload.fields([
+  { name: "picture", maxCount: 1 }
+])
+
+Then Multer builds this structure:
+req.files = {
+  picture: [
+    {
+      fieldname: "picture",
+      path: "uploads/img.png"
+    }
+  ]
+}
+
+So:
+req.files ✅
+.picture ✅
+[0] ✅
+.path ✅
+Everything lines up like Lego bricks 🧱
+
+
+Case 2: When THIS works 👇
+req.file.path
+
+Only when middleware is:
+upload.single("picture")
+
+Then Multer gives:
+req.file = {
+  path: "uploads/img.png"
+}
+*/
 
 router.route("/login").post(loginUser)
 
